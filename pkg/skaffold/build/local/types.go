@@ -34,6 +34,8 @@ import (
 	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/graph"
 	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/output/log"
 	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/platform"
+	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/providers"
+	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/providers/finch"
 	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/schema/latest"
 	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/util"
 )
@@ -44,6 +46,7 @@ type Builder struct {
 
 	cfg                docker.Config
 	localDocker        docker.LocalDaemon
+	localFinch         providers.BuildProvider
 	localCluster       bool
 	pushImages         bool
 	tryImportMissing   bool
@@ -101,6 +104,8 @@ func NewBuilder(ctx context.Context, bCtx BuilderContext, buildCfg *latest.Local
 		pushImages = *buildCfg.Push
 	}
 
+	localFinch := finch.NewLocalDaemon()
+
 	tryImportMissing := buildCfg.TryImportMissing
 
 	return &Builder{
@@ -108,6 +113,7 @@ func NewBuilder(ctx context.Context, bCtx BuilderContext, buildCfg *latest.Local
 		cfg:                bCtx,
 		kubeContext:        bCtx.GetKubeContext(),
 		localDocker:        localDocker,
+		localFinch:         localFinch,
 		localCluster:       cluster.Local,
 		pushImages:         pushImages,
 		tryImportMissing:   tryImportMissing,
@@ -159,7 +165,11 @@ func newPerArtifactBuilder(b *Builder, a *latest.Artifact) (artifactBuilder, err
 	case a.CustomArtifact != nil:
 		// required artifacts as environment variables
 		dependencies := util.EnvPtrMapToSlice(docker.ResolveDependencyImages(a.Dependencies, b.artifactStore, true), "=")
-		return custom.NewArtifactBuilder(b.localDocker, b.cfg, b.pushImages, b.skipTests, append(b.retrieveExtraEnv(), dependencies...)), nil
+		var provider providers.BuildProvider = b.localDocker
+		if a.CustomArtifact.BuildProvider == "finch" {
+			provider = b.localFinch
+		}
+		return custom.NewArtifactBuilder(provider, b.cfg, b.pushImages, b.skipTests, append(b.retrieveExtraEnv(), dependencies...)), nil
 
 	case a.BuildpackArtifact != nil:
 		return buildpacks.NewArtifactBuilder(b.localDocker, b.pushImages, b.mode, b.artifactStore), nil

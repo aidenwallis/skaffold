@@ -42,7 +42,7 @@ func (b *Builder) Build(ctx context.Context, out io.Writer, artifact *latest.Art
 		return docker.RemoteDigest(tag, b.cfg, nil)
 	}
 
-	imageID, err := b.localDocker.ImageID(ctx, tag)
+	imageID, err := b.buildProvider.ImageID(ctx, tag)
 	if err != nil {
 		return "", err
 	}
