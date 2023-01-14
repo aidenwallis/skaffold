@@ -16,11 +16,14 @@ limitations under the License.
 
 package custom
 
-import "github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/docker"
+import (
+	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/docker"
+	"github.com/GoogleContainerTools/skaffold/v2/pkg/skaffold/providers"
+)
 
 // Builder is a builder for custom artifacts
 type Builder struct {
-	localDocker   docker.LocalDaemon
+	buildProvider providers.BuildProvider
 	cfg           docker.Config
 	pushImages    bool
 	skipTest      bool
@@ -28,9 +31,9 @@ type Builder struct {
 }
 
 // NewArtifactBuilder returns a new custom artifact builder
-func NewArtifactBuilder(localDocker docker.LocalDaemon, cfg docker.Config, pushImages bool, skipTest bool, additionalEnv []string) *Builder {
+func NewArtifactBuilder(buildProvider providers.BuildProvider, cfg docker.Config, pushImages bool, skipTest bool, additionalEnv []string) *Builder {
 	return &Builder{
-		localDocker:   localDocker,
+		buildProvider: buildProvider,
 		cfg:           cfg,
 		pushImages:    pushImages,
 		skipTest:      skipTest,

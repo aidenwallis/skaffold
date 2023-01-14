@@ -1195,6 +1195,8 @@ type BuildpackVolume struct {
 // CustomArtifact *beta* describes an artifact built from a custom build script
 // written by the user. It can be used to build images with builders that aren't directly integrated with skaffold.
 type CustomArtifact struct {
+	// BuildProvider
+	BuildProvider string `yaml:"buildProvider,omitempty"`
 	// BuildCommand is the command executed to build the image.
 	BuildCommand string `yaml:"buildCommand,omitempty"`
 	// Dependencies are the file dependencies that skaffold should watch for both rebuilding and file syncing for this artifact.
